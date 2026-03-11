@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocabulary Test Generator</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: flex !important; flex-direction: column !important; }
+      .page-break { page-break-before: always !important; break-before: page; }
+      @page { margin: 0.4in; size: letter; orphans: 0; widows: 0; }
+      body { margin: 0; padding: 0; }
+      #print-preview { display: flex !important; flex-direction: column !important; }
+      #page-1, #page-2 { break-inside: avoid; page-break-after: always; break-after: page; }
+      #page-2 { page-break-before: always; break-before: page; }
+    }
+    #print-preview { display: flex; flex-direction: column; }
+    .print-only { display: none; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-white text-slate-900 overflow-auto" style="font-family: 'Inter', sans-serif;">
+  <!-- Input Interface -->
+  <div id="input-interface" class="no-print min-h-full">
+   <div class="max-w-4xl mx-auto p-6">
+    <!-- Header -->
+    <header class="text-center mb-8 pt-4">
+     <h1 id="app-title" class="text-3xl font-bold text-amber-600 mb-2" style="font-family: 'Crimson Pro', serif;">Vocabulary Test</h1>
+     <p class="text-slate-600">Internal use only</p>
+    </header><!-- Class Info -->
+    <section class="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200">
+     <h2 class="text-lg font-semibold text-amber-600 mb-4">Class Information</h2>
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+       <label for="class-name" class="block text-sm font-medium text-slate-700 mb-2">Class Name</label> <input type="text" id="class-name" placeholder="e.g., English 101" class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+      </div>
+      <div>
+       <label for="test-date" class="block text-sm font-medium text-slate-700 mb-2">Test Date</label> <input type="date" id="test-date" class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+      </div>
+     </div>
+    </section><!-- Vocabulary Words -->
+    <section class="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200">
+     <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-amber-600">Vocabulary Words</h2><button id="add-word-btn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+       </svg> Add Word </button>
+     </div>
+     <div id="words-container" class="space-y-4">
+      <!-- Word entries will be added here -->
+     </div>
+     <p id="empty-message" class="text-slate-500 text-center py-8">Click "Add Word" to start building your vocabulary test</p>
+    </section><!-- Generate Button -->
+    <div class="text-center pb-8">
+     <button id="generate-btn" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-lg rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-amber-500/25"> Generate Test </button>
+    </div>
+   </div>
+  </div><!-- Print Preview (Two Pages) -->
+  <div id="print-preview" class="print-only bg-white text-black" style="font-family: 'Times New Roman', serif; display: flex; flex-direction: column;"><!-- Control Bar -->
+   <div class="no-print bg-slate-900 text-white px-6 py-4 flex gap-4 justify-center sticky top-0 z-50"><button id="back-btn" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors"> Back to Edit </button> <button id="download-pdf-btn" class="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2">
+     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+     </svg> Generate PDF </button>
+   </div><!-- PAGE 1 -->
+   <div id="page-1" style="width: 8.5in; height: 11in; padding: 0.4in 0.5in; box-sizing: border-box; display: flex; flex-direction: column; page-break-after: always; break-after: page;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2in; border-bottom: 2px solid #000; padding-bottom: 0.08in;">
+     <div style="flex: 1;">
+      <span id="print-class-1" style="font-size: 16pt; font-weight: bold; color: #000;"></span>
+     </div>
+     <div style="flex: 1; text-align: center;">
+      <span style="font-size: 20pt; font-weight: bold; color: #000;">Vocabulary Test</span>
+     </div>
+     <div style="flex: 1; text-align: right;">
+      <span id="print-date-1" style="font-size: 13pt; color: #000; font-weight: bold;"></span>
+     </div>
+    </div><!-- Name Line -->
+    <div style="margin-bottom: 0.2in;">
+     <span style="font-size: 13pt; font-weight: bold; color: #000;">Name: _________________________________________________________________</span>
+    </div><!-- Exercise 1: Table -->
+    <div style="margin-bottom: 0.2in; flex-grow: 1; display: flex; flex-direction: column;">
+     <p style="font-size: 13pt; font-weight: bold; margin: 0 0 0.1in 0; color: #000;">Exercise 1: Write the word that matches the definition!</p>
+     <table id="table-1" style="width: 100%; border-collapse: collapse; font-size: 12pt; flex: 0 0 auto;">
+      <thead>
+       <tr style="background: #f0f0f0;">
+        <th style="border: 2px solid #000; padding: 8px; text-align: left;">Your Answer</th>
+        <th style="border: 2px solid #000; padding: 8px; text-align: left;">Part of Speech</th>
+        <th style="border: 2px solid #000; padding: 8px; text-align: left;">Definition</th>
+       </tr>
+      </thead>
+      <tbody id="table-body-1" style="font-size: 11pt;">
+      </tbody>
+     </table><!-- Exercise 2: Write words -->
+     <div style="margin-top: 0;">
+      <p style="font-size: 12pt; font-weight: bold; margin: 0 0 0.08in 0; color: #000;">Exercise 2: Write each word 3 times with its definition</p>
+      <div id="writing-lines" style="font-size: 10pt;">
+      </div>
+     </div>
+    </div>
+   </div><!-- PAGE 2 -->
+   <div id="page-2" style="width: 8.5in; height: 11in; padding: 0.4in 0.5in; box-sizing: border-box; display: flex; flex-direction: column; page-break-before: always; break-before: page;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2in; border-bottom: 2px solid #000; padding-bottom: 0.08in;">
+     <div style="flex: 1;">
+      <span id="print-class-2" style="font-size: 16pt; font-weight: bold; color: #000;"></span>
+     </div>
+     <div style="flex: 1; text-align: center;">
+      <span style="font-size: 20pt; font-weight: bold; color: #000;">Vocabulary Test</span>
+     </div>
+     <div style="flex: 1; text-align: right;">
+      <span id="print-date-2" style="font-size: 13pt; color: #000; font-weight: bold;"></span>
+     </div>
+    </div><!-- Name Line -->
+    <div style="margin-bottom: 0.2in;">
+     <span style="font-size: 13pt; font-weight: bold; color: #000;">Name: _________________________________________________________________</span>
+    </div><!-- Reference Table -->
+    <div style="margin-bottom: 0.2in; flex: 0 0 auto;">
+     <p style="font-size: 12pt; font-weight: bold; margin: 0 0 0.08in 0; color: #000;">Vocabulary Words (Reference)</p>
+     <table id="table-2" style="width: 100%; border-collapse: collapse; font-size: 11pt;">
+      <thead>
+       <tr style="background: #f0f0f0;">
+        <th style="border: 2px solid #000; padding: 6px; text-align: left;">Word</th>
+        <th style="border: 2px solid #000; padding: 6px; text-align: left;">Part of Speech</th>
+        <th style="border: 2px solid #000; padding: 6px; text-align: left;">Definition</th>
+       </tr>
+      </thead>
+      <tbody id="table-body-2">
+      </tbody>
+     </table>
+    </div><!-- Exercise 3: Fill in the blank -->
+    <div style="flex-grow: 1; display: flex; flex-direction: column;">
+     <p style="font-size: 14pt; font-weight: bold; margin: 0.1in 0 0.12in 0; color: #000;">Exercise 3: Fill in the blank!</p>
+     <div id="fill-blank-sentences" style="font-size: 20px; line-height: 3.8; flex-grow: 1; column-count: 1;">
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Configuration
+    const defaultConfig = {
+      main_title: "Vocabulary Test"
+    };
+
+    let config = { ...defaultConfig };
+    let words = [];
+    let wordIdCounter = 0;
+
+    // Element SDK initialization
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = { ...defaultConfig, ...newConfig };
+          document.getElementById('app-title').textContent = config.main_title || defaultConfig.main_title;
+        },
+        mapToCapabilities: (cfg) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (cfg) => new Map([
+          ["main_title", cfg.main_title || defaultConfig.main_title]
+        ])
+      });
+    }
+
+    // Create word entry template
+    function createWordEntry(id, data = {}) {
+      const entry = document.createElement('div');
+      entry.className = 'word-entry bg-white rounded-lg p-4 border border-slate-300';
+      entry.dataset.id = id;
+      
+      entry.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <span class="text-amber-600 font-medium">Word #${words.length + 1}</span>
+          <button class="remove-word text-slate-400 hover:text-red-600 transition-colors p-1" title="Remove word">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">Word</label>
+            <input type="text" class="word-input w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="e.g., ephemeral" value="${data.word || ''}">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">Part of Speech</label>
+            <select class="pos-input w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <option value="">Select...</option>
+              <option value="noun" ${data.pos === 'noun' ? 'selected' : ''}>Noun</option>
+              <option value="verb" ${data.pos === 'verb' ? 'selected' : ''}>Verb</option>
+              <option value="adjective" ${data.pos === 'adjective' ? 'selected' : ''}>Adjective</option>
+              <option value="adverb" ${data.pos === 'adverb' ? 'selected' : ''}>Adverb</option>
+              <option value="preposition" ${data.pos === 'preposition' ? 'selected' : ''}>Preposition</option>
+              <option value="conjunction" ${data.pos === 'conjunction' ? 'selected' : ''}>Conjunction</option>
+              <option value="pronoun" ${data.pos === 'pronoun' ? 'selected' : ''}>Pronoun</option>
+              <option value="interjection" ${data.pos === 'interjection' ? 'selected' : ''}>Interjection</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">Definition</label>
+            <input type="text" class="def-input w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="e.g., lasting for a very short time" value="${data.definition || ''}">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">Example Sentence (use ___ for the blank)</label>
+          <input type="text" class="example-input w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="e.g., The beauty of the sunset was ___, fading within minutes." value="${data.example || ''}">
+        </div>
+      `;
+      
+      // Remove button handler
+      entry.querySelector('.remove-word').addEventListener('click', () => {
+        removeWord(id);
+      });
+      
+      return entry;
+    }
+
+    // Add word
+    function addWord(data = {}) {
+      const id = ++wordIdCounter;
+      words.unshift({ id, ...data });
+      
+      const container = document.getElementById('words-container');
+      const emptyMsg = document.getElementById('empty-message');
+      
+      emptyMsg.style.display = 'none';
+      container.insertBefore(createWordEntry(id, data), container.firstChild);
+      
+      updateWordNumbers();
+    }
+
+    // Remove word
+    function removeWord(id) {
+      words = words.filter(w => w.id !== id);
+      const entry = document.querySelector(`.word-entry[data-id="${id}"]`);
+      if (entry) entry.remove();
+      
+      if (words.length === 0) {
+        document.getElementById('empty-message').style.display = 'block';
+      }
+      
+      updateWordNumbers();
+    }
+
+    // Update word numbers
+    function updateWordNumbers() {
+      const entries = document.querySelectorAll('.word-entry');
+      entries.forEach((entry, index) => {
+        const label = entry.querySelector('.text-amber-600');
+        if (label) label.textContent = `Word #${index + 1}`;
+      });
+    }
+
+    // Collect word data from inputs
+    function collectWordData() {
+      const collected = [];
+      const entries = document.querySelectorAll('.word-entry');
+      
+      entries.forEach(entry => {
+        const word = entry.querySelector('.word-input').value.trim();
+        const pos = entry.querySelector('.pos-input').value;
+        const definition = entry.querySelector('.def-input').value.trim();
+        const example = entry.querySelector('.example-input').value.trim();
+        
+        if (word) {
+          collected.push({ word, pos, definition, example });
+        }
+      });
+      
+      return collected;
+    }
+
+    // Shuffle array
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Generate test
+    function generateTest() {
+      const className = document.getElementById('class-name').value.trim() || 'Class Name';
+      const dateInput = document.getElementById('test-date').value;
+      const testDate = dateInput ? new Date(dateInput).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      
+      const wordData = collectWordData();
+      
+      if (wordData.length === 0) {
+        const container = document.getElementById('words-container');
+        const notice = document.createElement('div');
+        notice.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center';
+        notice.textContent = 'Please add at least one vocabulary word before generating the test.';
+        notice.id = 'error-notice';
+        
+        const existing = document.getElementById('error-notice');
+        if (existing) existing.remove();
+        
+        container.parentNode.insertBefore(notice, container);
+        setTimeout(() => notice.remove(), 3000);
+        return;
+      }
+      
+      // Set headers for both pages
+      document.getElementById('print-class-1').textContent = className;
+      document.getElementById('print-date-1').textContent = testDate;
+      document.getElementById('print-class-2').textContent = className;
+      document.getElementById('print-date-2').textContent = testDate;
+      
+      // Generate Table 1 (empty for student to fill)
+      const tableBody1 = document.getElementById('table-body-1');
+      tableBody1.innerHTML = '';
+      wordData.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="border: 2px solid #000; padding: 10px; height: 28px;"></td>
+          <td style="border: 2px solid #000; padding: 10px;">${item.pos}</td>
+          <td style="border: 2px solid #000; padding: 10px;">${item.definition}</td>
+        `;
+        tableBody1.appendChild(row);
+      });
+      
+      // Generate writing lines for Exercise 2
+      const writingLines = document.getElementById('writing-lines');
+      writingLines.innerHTML = '';
+      const lineCount = Math.max(10, wordData.length * 2);
+      for (let i = 0; i < lineCount; i++) {
+        const line = document.createElement('div');
+        line.style.cssText = 'border-bottom: 1px solid #000; height: 32px; margin-bottom: 3px;';
+        writingLines.appendChild(line);
+      }
+      
+      // Generate Table 2 (with answers for reference)
+      const tableBody2 = document.getElementById('table-body-2');
+      tableBody2.innerHTML = '';
+      wordData.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="border: 2px solid #000; padding: 8px;">${item.word}</td>
+          <td style="border: 2px solid #000; padding: 8px;">${item.pos}</td>
+          <td style="border: 2px solid #000; padding: 8px;">${item.definition}</td>
+        `;
+        tableBody2.appendChild(row);
+      });
+      
+      // Generate fill-in-the-blank sentences (shuffled)
+      const sentencesContainer = document.getElementById('fill-blank-sentences');
+      sentencesContainer.innerHTML = '';
+      const shuffledSentences = shuffleArray(wordData.filter(w => w.example));
+      
+      shuffledSentences.forEach((item, index) => {
+        const sentence = document.createElement('p');
+        sentence.style.cssText = 'margin: 0 0 0 0; padding: 0;';
+        const formattedExample = item.example.includes('___') ? item.example : item.example + ' ___';
+        sentence.textContent = `${index + 1}. ${formattedExample}`;
+        sentencesContainer.appendChild(sentence);
+      });
+      
+      // Show print preview
+      document.getElementById('input-interface').style.display = 'none';
+      document.getElementById('print-preview').style.display = 'flex';
+    }
+
+    // Generate PDF function - create downloadable HTML that can be printed
+    function generatePDF() {
+      const className = document.getElementById('print-class-1').textContent;
+      const fileName = `${className}_${new Date().toISOString().split('T')[0]}.html`;
+      
+      // Get the print preview HTML
+      const printContent = document.getElementById('print-preview').innerHTML;
+      
+      // Create a complete HTML document for printing
+      const htmlDoc = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${className} - Vocabulary Test</title>
+  <style>
+    @media print {
+      body { margin: 0; padding: 0; }
+      .no-print { display: none !important; }
+      #page-1, #page-2 { page-break-after: always; }
+      #page-2 { page-break-before: always; }
+    }
+    body { font-family: 'Times New Roman', serif; }
+    .no-print { display: none; }
+  </style>
+</head>
+<body>
+  ${printContent}
+</body>
+</html>`;
+      
+      // Create blob and download
+      const blob = new Blob([htmlDoc], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // Event listeners
+    document.getElementById('add-word-btn').addEventListener('click', () => addWord());
+    document.getElementById('generate-btn').addEventListener('click', generateTest);
+    document.getElementById('back-btn').addEventListener('click', () => {
+      document.getElementById('input-interface').style.display = 'block';
+      document.getElementById('print-preview').style.display = 'none';
+    });
+    document.getElementById('download-pdf-btn').addEventListener('click', generatePDF);
+
+    // Set default date to today
+    document.getElementById('test-date').valueAsDate = new Date();
+
+    // Add initial word entry
+    addWord();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9da8080035ba0dbb',t:'MTc3MzIwNTYwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
